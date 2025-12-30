@@ -1,0 +1,7 @@
+{
+  "upload": "https://functions.poehali.dev/1b760d3d-9050-46b2-b241-ea62855a5d16",
+  "auth": "https://functions.poehali.dev/8c76c606-38f2-4740-90e4-e062821995d9",
+  "chats": "https://functions.poehali.dev/e338b3a1-5223-4fea-a10f-5abfe57129c8",
+  "users": "https://functions.poehali.dev/0a02feff-1209-485f-8975-16742c2df63f",
+  "messages": "https://functions.poehali.dev/91cb650c-3aa9-4d2f-b91f-947de3eecde2"
+}

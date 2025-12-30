@@ -4,62 +4,65 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
+import { api } from '@/lib/api';
 import type { User } from '@/pages/Index';
 
 type AuthScreenProps = {
   onAuth: (user: User) => void;
 };
 
-type AuthStep = 'login' | 'register' | 'verify';
+type AuthMode = 'login' | 'register';
 
 const AuthScreen = ({ onAuth }: AuthScreenProps) => {
-  const [step, setStep] = useState<AuthStep>('login');
+  const [mode, setMode] = useState<AuthMode>('login');
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [username, setUsername] = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
-  const [code, setCode] = useState('');
-  const [pendingUser, setPendingUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  const handleLogin = () => {
-    if (!email || !username) {
+  const handleLogin = async () => {
+    if (!email || !password) {
+      toast.error('Заполните все поля');
+      return;
+    }
+    
+    setLoading(true);
+    try {
+      const response = await api.login(email, password);
+      if (response.error) {
+        toast.error(response.error);
+      } else {
+        toast.success('Добро пожаловать в Spektr!');
+        onAuth(response.user);
+      }
+    } catch (error) {
+      toast.error('Ошибка входа');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRegister = async () => {
+    if (!email || !password || !username || !firstName) {
       toast.error('Заполните все обязательные поля');
       return;
     }
-    const user: User = {
-      username: username.startsWith('@') ? username : `@${username}`,
-      firstName: 'Пользователь',
-      email,
-    };
-    setPendingUser(user);
-    setStep('verify');
-    toast.success(`Код отправлен на ${email}`);
-  };
-
-  const handleRegister = () => {
-    if (!email || !username || !firstName) {
-      toast.error('Заполните все обязательные поля');
-      return;
-    }
-    const user: User = {
-      username: username.startsWith('@') ? username : `@${username}`,
-      firstName,
-      lastName: lastName || undefined,
-      email,
-    };
-    setPendingUser(user);
-    setStep('verify');
-    toast.success(`Код отправлен на ${email}`);
-  };
-
-  const handleVerify = () => {
-    if (code.length !== 6) {
-      toast.error('Введите 6-значный код');
-      return;
-    }
-    if (pendingUser) {
-      toast.success('Добро пожаловать в Spektr!');
-      onAuth(pendingUser);
+    
+    setLoading(true);
+    try {
+      const response = await api.register(username, email, password, firstName, lastName);
+      if (response.error) {
+        toast.error(response.error);
+      } else {
+        toast.success('Регистрация успешна!');
+        onAuth(response.user);
+      }
+    } catch (error) {
+      toast.error('Ошибка регистрации');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -67,47 +70,20 @@ const AuthScreen = ({ onAuth }: AuthScreenProps) => {
     <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-background via-background to-primary/10">
       <Card className="w-full max-w-md animate-fade-in">
         <CardHeader className="text-center">
-          <div className="mx-auto mb-4 w-20 h-20 bg-primary rounded-2xl flex items-center justify-center">
-            <span className="text-4xl font-bold text-primary-foreground">S</span>
+          <div className="mx-auto mb-4">
+            <img 
+              src="https://cdn.poehali.dev/files/20251231_125751.png" 
+              alt="Spektr"
+              className="w-32 h-auto"
+            />
           </div>
           <CardTitle className="text-3xl">Spektr</CardTitle>
           <CardDescription>
-            {step === 'verify'
-              ? 'Введите код из письма'
-              : step === 'register'
-              ? 'Создайте аккаунт'
-              : 'Войдите в аккаунт'}
+            {mode === 'register' ? 'Создайте аккаунт' : 'Войдите в аккаунт'}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {step === 'verify' ? (
-            <>
-              <div className="space-y-2">
-                <Label htmlFor="code">Код подтверждения</Label>
-                <Input
-                  id="code"
-                  placeholder="000000"
-                  value={code}
-                  onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                  maxLength={6}
-                  className="text-center text-2xl tracking-widest"
-                />
-              </div>
-              <Button onClick={handleVerify} className="w-full" size="lg">
-                Подтвердить
-              </Button>
-              <Button
-                onClick={() => {
-                  setStep('login');
-                  setCode('');
-                }}
-                variant="ghost"
-                className="w-full"
-              >
-                Назад
-              </Button>
-            </>
-          ) : step === 'register' ? (
+          {mode === 'register' ? (
             <>
               <div className="space-y-2">
                 <Label htmlFor="username">Username *</Label>
@@ -146,10 +122,20 @@ const AuthScreen = ({ onAuth }: AuthScreenProps) => {
                   onChange={(e) => setEmail(e.target.value)}
                 />
               </div>
-              <Button onClick={handleRegister} className="w-full" size="lg">
-                Зарегистрироваться
+              <div className="space-y-2">
+                <Label htmlFor="password">Пароль *</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+              </div>
+              <Button onClick={handleRegister} disabled={loading} className="w-full" size="lg">
+                {loading ? 'Загрузка...' : 'Зарегистрироваться'}
               </Button>
-              <Button onClick={() => setStep('login')} variant="ghost" className="w-full">
+              <Button onClick={() => setMode('login')} variant="ghost" className="w-full">
                 Уже есть аккаунт? Войти
               </Button>
             </>
@@ -166,18 +152,19 @@ const AuthScreen = ({ onAuth }: AuthScreenProps) => {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="loginUsername">Username</Label>
+                <Label htmlFor="loginPassword">Пароль</Label>
                 <Input
-                  id="loginUsername"
-                  placeholder="@username"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
+                  id="loginPassword"
+                  type="password"
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                 />
               </div>
-              <Button onClick={handleLogin} className="w-full" size="lg">
-                Войти
+              <Button onClick={handleLogin} disabled={loading} className="w-full" size="lg">
+                {loading ? 'Загрузка...' : 'Войти'}
               </Button>
-              <Button onClick={() => setStep('register')} variant="ghost" className="w-full">
+              <Button onClick={() => setMode('register')} variant="ghost" className="w-full">
                 Нет аккаунта? Зарегистрироваться
               </Button>
             </>

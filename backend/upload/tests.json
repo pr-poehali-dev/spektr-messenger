@@ -1,0 +1,18 @@
+{
+  "tests": [
+    {
+      "name": "Upload avatar",
+      "method": "POST",
+      "path": "/",
+      "body": {
+        "file": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+        "type": "image/png"
+      },
+      "expectedStatus": 200,
+      "expectedBody": {
+        "url": "string"
+      },
+      "bodyMatcher": "partial"
+    }
+  ]
+}

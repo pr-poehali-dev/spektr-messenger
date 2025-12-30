@@ -1,0 +1,14 @@
+{
+  "tests": [
+    {
+      "name": "Search users",
+      "method": "GET",
+      "path": "/?search=@test",
+      "expectedStatus": 200,
+      "expectedBody": {
+        "users": []
+      },
+      "bodyMatcher": "partial"
+    }
+  ]
+}
